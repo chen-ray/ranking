@@ -4,7 +4,7 @@ Website: <a href="https://ranking.chen-ray.cn">https://ranking.chen-ray.cn</a><b
 Author: CHEN Ray<br>
 Email：chenraygogo@gmail.com
 
-In BWF you can check the player rankings. <br>
+In BWF ranking you can check the player rankings. <br>
 The website uses the following software, thank them ~
 
 -   Laravel v10
