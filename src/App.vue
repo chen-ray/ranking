@@ -4,12 +4,13 @@
  * @LastEditTime: 2024-03-12 01:35:35
  * @FilePath: \ranking-front-end\src\App.vue
  * @Description: Do not edit
+   import {RouterLink, RouterView} from 'vue-router'
+   import HelloWorld from './components/HelloWorld.vue'
 -->
 <script setup lang="ts">
-import {RouterLink, RouterView} from 'vue-router'
-//import HelloWorld from './components/HelloWorld.vue'
+
 import {ref, computed, onMounted, reactive, watch} from 'vue'
-import {Modal} from 'bootstrap'
+import { Modal } from 'bootstrap'
 
 import {index as rankingIndex, getPublicationIds, getBreakdowns, getWeeks} from './api/ranking'
 
@@ -227,7 +228,7 @@ console.log('import.meta.env=>', import.meta.env)
                                     <span v-if="ranking.player2_name">{{ ranking.player2_name }}</span>
                                 </td>
                                 <td class="text-start px-2">
-                                    <img :src="ranking.country_img" style="width: 35px; border: 0px solid steelblue"/>
+                                    <img :src="ranking.country_img" style="width: 30px; border: 0px solid steelblue"/>
                                     <a type="button" @click="handleP1Country(ranking.p1_country)" class="px-2 link link-primary">
                                         {{ ranking.country_name }}</a>
                                 </td>
