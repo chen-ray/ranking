@@ -9,37 +9,49 @@
 -->
 <script setup lang="ts">
 
-import {ref, computed, onMounted, reactive, watch} from 'vue'
+import {ref, computed, onMounted, reactive, watch, type Ref} from 'vue'
 import { Modal } from 'bootstrap'
 
 import {index as rankingIndex, getPublicationIds, getBreakdowns, getWeeks} from './api/ranking'
+import  { IRanking } from "@/model/baseModel"
+import type { IBreakdown, IWeek } from "@/model/baseModel"
+
+import { useI18n } from 'vue-i18n'
+const { locale, t } = useI18n();
 
 const loading = ref(false)
 const publicationId = ref('0')
 const publicationIds = ref({})
-let rankings = ref([])
-let breakdowns = ref([])
-let weeks = ref([])
-let page = ref({
-    current: 1,
-    total: 10,
-    first: 1,
-    last: 10,
-    next: 2,
-    prev: 1
-})
+
+const _ranking = new IRanking()
+
+let rankings = ref(_ranking )
+
+const _breakdown:IBreakdown[]  = []
+let breakdowns = ref(_breakdown)
+
+
+const _week:IWeek[]  = []
+let weeks = ref(_week)
 
 // 运动员分类ID， 男单，女单什么的
 const categoryId = ref(6)
 const cationButIndex = ref(6)
 const p1_country = ref('0')
 
-const cationBut = ref([
+/*const cationBut = ref([
     {id: 6, name: "MAN'S SINGLES"},
     {id: 7, name: "WOMAN'S SINGLES"},
     {id: 8, name: "MAN'S DOUBLES"},
     {id: 9, name: "WOMAN'S DOUBLES"},
     {id: 10, name: "MIXED DOUBLES"}
+])*/
+const cationBut = ref([
+    {id: 6, name: 'button.manSingles'},
+    {id: 7, name: "button.womanSingles"},
+    {id: 8, name: "button.manDoubles"},
+    {id: 9, name: "button.womanDoubles"},
+    {id: 10, name: "button.mixedDoubles"}
 ])
 
 const request = ref({
@@ -49,8 +61,8 @@ const request = ref({
     p1_country: p1_country
 })
 
-const modal = ref({})
-const loadingModal = ref({})
+const modal = ref({}) as Ref<Modal>
+const loadingModal = ref({}) as Ref<Modal>
 
 onMounted(() => {
     modal.value = new Modal('#breakdownModal', {backdrop: 'static'})
@@ -72,27 +84,25 @@ const title = computed(() => {
 function requestApi() {
     rankingIndex(request.value).then(function (res) {
         console.log('res=>', res)
-        rankings.value = res.data
-        page.value.current = res.meta.current_page
-        page.value.total = res.meta.total
-        page.value.current = res.meta.current_page
-        page.value.last = res.meta.last_page
-        page.value.next = res.meta.current_page + 1
-        page.value.prev = res.meta.current_page - 1
-        console.log('rankings=>', rankings)
+        rankings.value = res
+        rankings.value.meta.current = res.meta.current_page
+        rankings.value.meta.last = res.meta.last_page
+        rankings.value.meta.next = res.meta.current_page + 1
+        rankings.value.meta.prev = res.meta.current_page - 1
+        //console.log('rankings=>', rankings)
     })
 }
 
 function pagination(param: string) {
     console.log('enter function pagination')
-    if (param === 'first' && page.value.current != 1) {
+    if (param === 'first' && rankings.value.meta.current > 1) {
         request.value.page = 1
-    } else if (param === 'next' && page.value.current != page.value.last) {
-        request.value.page = page.value.current + 1
-    } else if (param === 'prev' && page.value.current != 1) {
-        request.value.page = page.value.current - 1
-    } else if (param === 'last' && page.value.current != page.value.last) {
-        request.value.page = page.value.last
+    } else if (param === 'next' && rankings.value.meta.current < rankings.value.meta.last) {
+        request.value.page = rankings.value.meta.current + 1
+    } else if (param === 'prev' && rankings.value.meta.current > 1) {
+        request.value.page = rankings.value.meta.current - 1
+    } else if (param === 'last' && rankings.value.meta.current < rankings.value.meta.last) {
+        request.value.page = rankings.value.meta.last
     } else {
         console.log('出错了, param=>', param)
         return
@@ -153,7 +163,15 @@ getWeeks().then(function(res){
     publicationId.value = res[0].id
     console.log('publicationId.value=>', publicationId.value)
 })
-console.log('import.meta.env=>', import.meta.env)
+
+
+const changeLang = (parameter: any) => {
+    const lang = parameter.target.value;
+    console.log('lang=>', lang)
+    locale.value = lang; // 切换语言
+    localStorage.setItem('LANG', lang); // 本地存储当前语言类型
+}
+
 </script>
 
 <template>
@@ -161,11 +179,17 @@ console.log('import.meta.env=>', import.meta.env)
         <div class="col">
             <div class="row justify-content-center m-4 align-items-center" >
                 <h1 class="fs-2 font-bold underline col-auto col-form-label">
-                    BWF ranking No.
+                    {{ $t('message.title') }}
                 </h1>
                 <div class="col-auto">
                     <select class="form-select" aria-label="Default select example" v-model="publicationId">
                         <option v-for="week in weeks" :value="week.id">{{ week.display }}</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <select class="form-select" name="lang" id="lang-select" @change="changeLang">
+                        <option value="en" selected>English</option>
+                        <option value="zhCn">简体中文</option>
                     </select>
                 </div>
             </div>
@@ -179,7 +203,7 @@ console.log('import.meta.env=>', import.meta.env)
                     id="collapseButton1" type="button" aria-expanded="false" :key="obj.id"
                     @click="handleCatId(obj.id)"
             >
-                {{ obj.name }}
+                {{ $t(obj.name) }}
             </button>
         </div>
     </div>
@@ -187,7 +211,7 @@ console.log('import.meta.env=>', import.meta.env)
     <div class="row p-2">
         <div v-if="loading" class="d-flex justify-content-center">
             <div class="spinner-border" role="status">
-                <span class="visually-hidden">Loading...</span>
+                <span class="visually-hidden">{{ $t('message.loading') }}...</span>
             </div>
         </div>
     </div>
@@ -196,23 +220,26 @@ console.log('import.meta.env=>', import.meta.env)
         <div class="col">
             <div class="card card-body">
                 <div class="row">
-                    <div class="col">
-                        <h3 class="text-center">{{ title }}</h3>
+                    <div class="col table-responsive">
+                        <h3 class="text-center">{{ $t(title) }}</h3>
                         <table class="table table-striped table-hover table-bordered text-center">
                             <thead>
-                            <tr>
-                                <th scope="col">RANK</th>
-                                <th scope="col">NAME</th>
-                                <th scope="col">NATION
-                                    <a v-if="p1_country!=='0'" class="fs-6" @click="handleP1Country('0')">clear</a></th>
-                                <th scope="col">BIRTHDAY</th>
-                                <th scope="col">TOURNAMENTS</th>
-                                <th scope="col">POINTS</th>
-                                <th scope="col">RECORD</th>
-                            </tr>
+                                <tr>
+                                    <th scope="col">{{ $t('table.rank') }}</th>
+                                    <th scope="col">{{ $t('table.name') }}</th>
+                                    <th scope="col">{{ $t('table.nation') }}
+                                        <a v-if="p1_country!=='0'" class="fs-6" @click="handleP1Country('0')">
+                                            {{ $t('a.clear') }}
+                                        </a>
+                                    </th>
+                                    <th scope="col">{{ $t('table.birthday') }}</th>
+                                    <th scope="col">{{ $t('table.tournaments') }}</th>
+                                    <th scope="col">{{ $t('table.points') }}</th>
+                                    <th scope="col">{{ $t('table.record') }}</th>
+                                </tr>
                             </thead>
                             <tbody class="table-group-divider">
-                            <tr v-for="ranking in rankings" :key="ranking.id">
+                            <tr v-for="ranking in rankings.data" :key="ranking.id">
                                 <th scope="row">
                                     {{ ranking.rank }}
                                     <i v-if="ranking.rank_change > 0" class="bi bi-caret-up-fill text-primary">
@@ -228,7 +255,7 @@ console.log('import.meta.env=>', import.meta.env)
                                     <span v-if="ranking.player2_name">{{ ranking.player2_name }}</span>
                                 </td>
                                 <td class="text-start px-2">
-                                    <img :src="ranking.country_img" style="width: 30px; border: 0px solid steelblue"/>
+                                    <img :src="ranking.country_img" style="width: 30px; border: 0 solid steelblue"/>
                                     <a type="button" @click="handleP1Country(ranking.p1_country)" class="px-2 link link-primary">
                                         {{ ranking.country_name }}</a>
                                 </td>
@@ -244,7 +271,7 @@ console.log('import.meta.env=>', import.meta.env)
                                             class="btn btn-secondary btn-sm"
                                             @click="showBreakdownModal(ranking.id )"
                                     >
-                                        view
+                                        {{ $t('button.view') }}
                                     </button>
                                 </td>
                             </tr>
@@ -259,19 +286,20 @@ console.log('import.meta.env=>', import.meta.env)
                             <ul class="pagination mx-auto" style="width: 400px;">
                                 <li class="page-item disabled">
                                     <a class="page-link">
-                                        Page <label id="pageCurrent">{{ page.current }}</label> of <label id="pageTotal">{{ page.last }}</label></a>
+                                        Page <label id="pageCurrent">{{ rankings.meta.current }}</label> of
+                                        <label id="pageTotal">{{ rankings.meta.last }}</label></a>
                                 </li>
-                                <li class="page-item" :class="page.current == 1 ? 'disabled' : ''">
-                                    <a class="page-link" @click="pagination('first')">First</a>
+                                <li class="page-item" :class="rankings.meta.current == 1 ? 'disabled' : ''">
+                                    <a class="page-link" @click="pagination('first')">{{ $t('page.first') }}</a>
                                 </li>
-                                <li class="page-item" :class="page.current == 1 ? 'disabled' : ''">
-                                    <a class="page-link" @click="pagination('prev')">Prev</a>
+                                <li class="page-item" :class="rankings.meta.current == 1 ? 'disabled' : ''">
+                                    <a class="page-link" @click="pagination('prev')">{{ $t('page.prev') }}</a>
                                 </li>
-                                <li class="page-item" :class="page.current == page.last ? 'disabled' : ''">
-                                    <a class="page-link" @click="pagination('next')">Next</a>
+                                <li class="page-item" :class="rankings.meta.current == rankings.meta.last ? 'disabled' : ''">
+                                    <a class="page-link" @click="pagination('next')">{{ $t('page.next') }}</a>
                                 </li>
-                                <li class="page-item" :class="page.current == page.last ? 'disabled' : ''">
-                                    <a class="page-link" @click="pagination('last')">Last</a>
+                                <li class="page-item" :class="rankings.meta.current == rankings.meta.last ? 'disabled' : ''">
+                                    <a class="page-link" @click="pagination('last')">{{ $t('page.last') }}</a>
                                 </li>
                             </ul>
                         </nav>
@@ -287,33 +315,33 @@ console.log('import.meta.env=>', import.meta.env)
         <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-5" id="exampleModalLabel">征战记录</h1>
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">
+                        {{ $t('message.gameRecord') }}
+                    </h1>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body table-responsive">
                     <table class="table table-striped table-hover table-bordered">
                         <thead>
                         <tr>
-                            <th scope="col">YEAR/WEEK</th>
-                            <th scope="col">NAME</th>
-                            <th scope="col">RANKING</th>
-                            <th scope="col">POINTS</th>
-                            <th scope="col">OPERATION</th>
+                            <th scope="col">{{ $t('table.yearWeek') }}</th>
+                            <th scope="col">{{ $t('table.name') }}</th>
+                            <th scope="col">{{ $t('table.ranking') }}</th>
+                            <th scope="col">{{ $t('table.points') }}</th>
                         </tr>
                         </thead>
                         <tbody class="table-group-divider" id="modalBody">
                         <tr v-for="breakdown in breakdowns">
                             <td>{{ breakdown.date }}</td>
-                            <td class="text-start">{{ breakdown.name }}</td>
+                            <td class="text-start"><a :href="breakdown.url">{{ breakdown.name }}</a></td>
                             <td>{{ breakdown.result }}</td>
                             <td>{{ breakdown.points }}</td>
-                            <td><a :href="breakdown.url">website</a></td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{$t('button.close')}}</button>
                 </div>
             </div>
         </div>
@@ -324,14 +352,12 @@ console.log('import.meta.env=>', import.meta.env)
             <div class="modal-content">
                 <div class="d-flex justify-content-center p-2">
                     <div class="spinner-border p-2" role="status">
-                        <span class="visually-hidden">Loading...</span>
+                        <span class="visually-hidden">{{ $t('message.loading') }}...</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-
 </template>
-
 <style scoped></style>

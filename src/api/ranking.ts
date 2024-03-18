@@ -8,7 +8,10 @@
 import axios from 'axios';
 const URL = import.meta.env.VITE_API_URL
 
-export function index(param: object) {
+import type {IRanking} from "@/model/baseModel";
+
+
+export function index(param: object) : Promise<IRanking> {
     return axios.get(URL + "index", { params: param || {} }).then(function (res) {
         return res.data;
     });

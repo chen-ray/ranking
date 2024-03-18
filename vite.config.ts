@@ -17,8 +17,8 @@ export default defineConfig({
         //assetsDir: 'https://ranking-cdn.chen-ray.cn/assets/',
         terserOptions: {
             compress: {
-                drop_console: true, // 关闭所有的 console.log 打印
-                drop_debugger: true, // 关闭所有的 console.log 打印
+                drop_console: true,     // 关闭所有的 console.log 打印
+                drop_debugger: true,    // 关闭所有的 console.log 打印
             },
         }
     }
