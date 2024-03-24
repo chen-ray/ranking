@@ -117,12 +117,6 @@ function handleCatId(catId: number) {
     requestApi()
 }
 
-getPublicationIds().then(function (res) {
-    console.log('getPublicationIds res=>', res)
-    publicationIds.value = res
-    publicationId.value = res[0]
-})
-
 function showBreakdownModal(rankingId: number) {
     console.log('rankingId', rankingId);
     loadingModal.value.show()

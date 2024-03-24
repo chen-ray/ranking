@@ -13,8 +13,11 @@ export default defineConfig({
             '@': fileURLToPath(new URL('./src', import.meta.url))
         }
     },
+    esbuild: {
+        drop: ['console', 'debugger']
+    },
     build: {
-        //assetsDir: 'https://ranking-cdn.chen-ray.cn/assets/',
+        minify: 'terser',
         terserOptions: {
             compress: {
                 drop_console: true,     // 关闭所有的 console.log 打印
